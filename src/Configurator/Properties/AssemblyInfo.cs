@@ -7,11 +7,11 @@ using System.Windows;
 // Les informations générales relatives à un assembly dépendent de
 // l'ensemble d'attributs suivant. Changez les valeurs de ces attributs pour modifier les informations
 // associées à un assembly.
-[assembly: AssemblyTitle("Studio des Langues - Professeur")]
+[assembly: AssemblyTitle("Configurator")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Dev2Be")]
-[assembly: AssemblyProduct("Studio des Langues - Professeur")]
+[assembly: AssemblyProduct("Configurator")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -51,7 +51,5 @@ using System.Windows;
 // Vous pouvez spécifier toutes les valeurs ou indiquer les numéros de build et de révision par défaut
 // en utilisant '*', comme indiqué ci-dessous :
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.767")]
-[assembly: AssemblyFileVersion("1.0.0.767")]
-[assembly: NeutralResourcesLanguage("fr-FR")]
-
+[assembly: AssemblyVersion("1.0.0.46")]
+[assembly: AssemblyFileVersion("1.0.0.46")]

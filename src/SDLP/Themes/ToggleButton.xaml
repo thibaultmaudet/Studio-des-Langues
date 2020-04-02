@@ -1,0 +1,37 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SDLP.Themes">
+    <Style x:Key="BackstageToggleButton" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Background" Value="{x:Null}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Content">
+            <Setter.Value>
+                <StackPanel Orientation="Horizontal" Width="317">
+                    <Image Width="30" Height="30" Source="{DynamicResource Icon}" Margin="10,0,0,0"/>
+                    <TextBlock Text="{DynamicResource Text}" FontSize="16" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                        <Grid>
+                            <ScrollViewer SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
+                            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="#D5E1F2"/>
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter Property="Background" Value="#FFC2D5F2"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+</ResourceDictionary>

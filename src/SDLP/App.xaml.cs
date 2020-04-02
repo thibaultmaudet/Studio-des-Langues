@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 
 namespace SDLP
 {
@@ -15,10 +7,21 @@ namespace SDLP
     /// </summary>
     public partial class App : Application
     {
-        protected override void OnStartup(StartupEventArgs e)
+        protected async override void OnStartup(StartupEventArgs e)
         {
-            base.OnStartup(e);
-        }
+            SplashScreen splashScreen = new SplashScreen();
+            splashScreen.Show();
 
+            base.OnStartup(e);
+
+            await splashScreen.CheckConfig();
+
+            MainWindow window = new MainWindow();
+            window.Show();
+
+            splashScreen.Close();
+
+            window.Focus();
+        }
     }
 }

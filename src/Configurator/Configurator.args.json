@@ -1,0 +1,10 @@
+{
+  "FileVersion": 2,
+  "Id": "45dde395-4aee-4985-a11d-bc17cfab5e58",
+  "Items": [
+    {
+      "Id": "650e2db9-0e10-4b18-865d-c3a25edcb5d5",
+      "Command": "--appName \"Studio des Langues - Professeur\""
+    }
+  ]
+}

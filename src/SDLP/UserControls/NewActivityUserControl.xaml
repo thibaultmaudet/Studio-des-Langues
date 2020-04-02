@@ -1,0 +1,66 @@
+﻿<UserControl x:Class="SDLP.NewActivityUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:SDLP"
+             xmlns:Fluent="urn:fluent-ribbon"
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             mc:Ignorable="d">
+    <WrapPanel Orientation="Horizontal">
+        <Button x:Name="BlanckActivityButton" Style="{StaticResource NewActivityTemplateButton}">
+            <Button.Content>
+                <StackPanel Orientation="Vertical">
+                    <Grid Width="156" Height="202">
+                        <Image Source="{DynamicResource BackgroundImage}" Width="156" Height="202"/>
+                    </Grid>
+                    <TextBlock Text="{DynamicResource Text}" Width="156">
+                        <TextBlock.ToolTip>
+                            <ToolTip Content="{DynamicResource Text}"/>
+                        </TextBlock.ToolTip>
+                    </TextBlock>
+                </StackPanel>
+            </Button.Content>
+            <Button.Resources>
+                <system:String x:Key="Text">Activité vierge</system:String>
+                <BitmapImage x:Key="BackgroundImage" UriSource="/SDLP;component/Assets/BlankActivity.png"/>
+            </Button.Resources>
+        </Button>
+        <Button x:Name="WordDocumentButton" Style="{StaticResource NewActivityTemplateButton}">
+            <StackPanel Orientation="Vertical">
+                <Grid Width="156" Height="202">
+                    <Image Source="{DynamicResource BackgroundImage}" Width="156" Height="202"/>
+                    <Image Source="{DynamicResource FileTypeImage}" Margin="118,166,7,5"/>
+                </Grid>
+                <TextBlock Text="{DynamicResource Text}" Width="156">
+                    <TextBlock.ToolTip>
+                        <ToolTip Content="{DynamicResource Text}"/>
+                    </TextBlock.ToolTip>
+                </TextBlock>
+            </StackPanel>
+            <Button.Resources>
+                <system:String x:Key="Text">Activité issu d'un document Word</system:String>
+                <BitmapImage x:Key="BackgroundImage" UriSource="/SDLP;component/Assets/TemplateActivity.png"/>
+                <BitmapImage x:Key="FileTypeImage" UriSource="/SDLP;component/Assets/WinWord.png"/>
+            </Button.Resources>
+        </Button>
+        <Button x:Name="PdfDocumentButton" Style="{StaticResource NewActivityTemplateButton}">
+             <StackPanel Orientation="Vertical">
+                 <Grid Width="156" Height="202">
+                     <Image Source="{DynamicResource BackgroundImage}" Width="156" Height="202"/>
+                     <Image Source="{DynamicResource FileTypeImage}" Margin="118,166,7,5"/>
+                 </Grid>
+                 <TextBlock Text="{DynamicResource Text}" Width="156">
+                     <TextBlock.ToolTip>
+                         <ToolTip Content="{DynamicResource Text}"/>
+                     </TextBlock.ToolTip>
+                 </TextBlock>
+             </StackPanel>
+            <Button.Resources>
+                <system:String x:Key="Text">Activité issu d'un document PDF</system:String>
+                <BitmapImage x:Key="BackgroundImage">/SDLP;component/Assets/TemplateActivity.png</BitmapImage>
+                <BitmapImage x:Key="FileTypeImage">/SDLP;component/Assets/PDF.png</BitmapImage>
+            </Button.Resources>
+        </Button>
+    </WrapPanel>
+</UserControl>

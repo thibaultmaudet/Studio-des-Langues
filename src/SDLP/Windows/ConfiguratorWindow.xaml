@@ -1,0 +1,13 @@
+﻿<Window x:Class="SDLP.ConfiguratorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SDLP"
+        xmlns:sdllib="clr-namespace:SDLLib.Control;assembly=SDLLib"
+        mc:Ignorable="d"
+        Title="Configuration" Height="390" Width="510" WindowStartupLocation="CenterOwner">
+    <Grid>
+        <sdllib:ApplicationIntegrator x:Name="ApplicationContainer"/>
+    </Grid>
+</Window>

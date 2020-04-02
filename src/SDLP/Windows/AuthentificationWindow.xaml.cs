@@ -1,25 +1,18 @@
-﻿using SDLL;
-using SDLL.Configuration;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+﻿using Dev2Be.Toolkit;
+using Meziantou.Framework.Win32;
+using Microsoft.Win32;
+using System.Reflection;
 using System.Windows;
-using System.Windows.Media;
 
 namespace SDLP
 {
     /// <summary>
     /// Logique d'interaction pour AuthentificationWindow.xaml
     /// </summary>
-    public partial class AuthentificationWindow : Window
+    public partial class AuthentificationWindow : Fluent.RibbonWindow
     {
-        private Teacher teacher;
-
-        public AuthentificationWindow(ref Teacher teacher)
+        public AuthentificationWindow()
         {
-            this.teacher = teacher;
-
             InitializeComponent();
         }
 
@@ -30,90 +23,26 @@ namespace SDLP
             ShowDialog();
         }
 
-        protected override void OnSourceInitialized(EventArgs e)
-        {
-            IconHelper.RemoveIcon(this);
-
-            ShowInTaskbar = false;
-        }
-
         private void ConnectionButton_Click(object sender, RoutedEventArgs e)
         {
-            if (IsValid())
+            if (string.IsNullOrEmpty(UsernameWatermarkTextBox.Text) && string.IsNullOrEmpty(PasswordWatermarkTextBox.Text))
+                ErrorTextBox.Text = "Veuillez indiquer un nom d'utilisateur et un mot de passe.";
+            else if (string.IsNullOrEmpty(UsernameWatermarkTextBox.Text))
+                ErrorTextBox.Text = "Veuillez indiquer un nom d'utilisateur.";
+            else if (string.IsNullOrEmpty(PasswordWatermarkTextBox.Text))
+                ErrorTextBox.Text = "Veuillez indiquer un mot de passe.";
+            else
             {
-                try
-                {
-                    DomainServerConfiguration informationsServeurDomaine = DomainServerConfiguration.Charger();
+                AssemblyInformations assemblyInformation = new AssemblyInformations(Assembly.GetExecutingAssembly().GetName().Name);
 
-                    string ipDomaine = informationsServeurDomaine.IPAddress + "/";
-                    string[] domaines = informationsServeurDomaine.DomainName.Split('.');
+                RegistryKey registryKey = Registry.CurrentUser.CreateSubKey("Software\\" + assemblyInformation.Company + "\\" + assemblyInformation.Product + "\\Account");
+                registryKey.SetValue("IsLogged", true);
+                registryKey.SetValue("Username", UsernameWatermarkTextBox.Text);
 
-                    foreach (string domaine in domaines)
-                        ipDomaine += "DC=" + domaine + ",";
+                CredentialManager.WriteCredential("SDLPAccount:user=" + UsernameWatermarkTextBox.Text, UsernameWatermarkTextBox.Text, PasswordWatermarkTextBox.Password, CredentialPersistence.Session);
 
-                    ipDomaine = ipDomaine.TrimEnd(',');
-
-                    Ldap ldap = new Ldap(ipDomaine, UtilisateurWatermarkTextBox.Text, MotDePasseWatermarkTextBox.Password);
-
-                    if (ldap.Authentification())
-                    {
-                        List<string> groups = ldap.GetGroup();
-
-                        string group = groups[0];
-
-                        teacher.FirstName = ldap.GetFirstName();
-                        teacher.LastName = ldap.GetLastName();
-                        teacher.Subject = Teacher.GetSubject(ldap.GetGroup()[0]);
-
-                        if (teacher.Subject == "Anglais")
-                        {
-                            Ldap.IsAuthificated = true;
-                            Close();
-                        }
-                        else
-                        {
-                            InformationsTextBlock.Text = "Vous ne disposez pas des autorisations nécessaires pour continuer. Veuillez vérifier vos identifants avant de réessayer.";
-
-                            teacher.Save(Path.Combine(Directory.GetCurrentDirectory(), teacher.FirstName + ".credential"));
-                        }
-                    }
-                    else
-                    {
-                        InformationsTextBlock.Text = "Nom d'utilisateur ou mot de passe invalide. Veuillez vérifier vos identifants avant de réessayer.";
-                        
-                        teacher.Save(Path.Combine(Directory.GetCurrentDirectory(), teacher.FirstName + ".credential"));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    InformationsTextBlock.Text = "L'erreur suivante s'est produite : " + ex.Message;
-
-                    using (FileStream fileStream = File.Create(Path.Combine(Directory.GetCurrentDirectory(), "AuthentificationErreur" + DateTime.Now+".txt")))
-                    {
-                        byte[] info = new UTF8Encoding(true).GetBytes("Message : " + ex.Message + Environment.NewLine + ex.StackTrace);
-                        fileStream.Write(info, 0, info.Length);
-                    }
-
-                    teacher.Save(Path.Combine(Directory.GetCurrentDirectory(), teacher.FirstName + ".credential"));
-                }
+                Close();
             }
-        }
-
-        private void WatermarkTextBox_LostFocus(object sender, RoutedEventArgs e) => IsValid();
-
-        private bool IsValid()
-        {
-            if (string.IsNullOrEmpty(UtilisateurWatermarkTextBox.Text))
-            {
-                MotDePasseWatermarkTextBox.BorderBrush = Brushes.Red;
-                UtilisateurWatermarkTextBox.BorderBrush = Brushes.Red;
-
-                InformationsTextBlock.Text = "Veuillez rentrer un nom d'utilisateur.";
-
-                return false;
-            }
-
-            return true;
         }
     }
 }

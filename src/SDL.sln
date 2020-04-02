@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SDLE", "SDLE\SDLE.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SDLE.Tests", "SDLE.Tests\SDLE.Tests.csproj", "{06A33618-2948-4CCA-8046-C00848B5E475}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Configurator", "Configurator\Configurator.csproj", "{45DDE395-4AEE-4985-A11D-BC17CFAB5E58}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{06A33618-2948-4CCA-8046-C00848B5E475}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06A33618-2948-4CCA-8046-C00848B5E475}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{06A33618-2948-4CCA-8046-C00848B5E475}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45DDE395-4AEE-4985-A11D-BC17CFAB5E58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45DDE395-4AEE-4985-A11D-BC17CFAB5E58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45DDE395-4AEE-4985-A11D-BC17CFAB5E58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45DDE395-4AEE-4985-A11D-BC17CFAB5E58}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

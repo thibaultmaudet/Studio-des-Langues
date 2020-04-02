@@ -1,14 +1,23 @@
 ﻿using Dev2Be.Toolkit;
 using Dev2Be.Toolkit.Extensions;
+using Fluent;
 using Microsoft.Win32;
+using MRULib.MRU.Interfaces;
 using SDLL;
+using SDLP.Helpers;
+using SDLP.Helpers.Extensions;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 
 namespace SDLP
@@ -16,228 +25,257 @@ namespace SDLP
     /// <summary>
     /// Logique d'interaction pour MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : RibbonWindow
     {
         private Activity activity;
 
-        private Teacher teacher;
+        private bool isLogged;
+
+        private string filePath;
+
+        private OpenDocumentWindow OpenDocumentWindow;
+
+        public TextRange DocumentTextRange;
+
+        public bool IsLogged
+        {
+            get
+            {
+                AssemblyInformations assemblyInformation = new AssemblyInformations(Assembly.GetExecutingAssembly().GetName().Name);
+                
+                try
+                {
+                    var registryValue = Registry.GetValue(@"HKEY_CURRENT_USER\Software\"+assemblyInformation.Company+"\\"+assemblyInformation.Product+"\\Account", "IsLogged", false);
+
+                    if (registryValue != null)
+                        return Convert.ToBoolean(registryValue);
+                }
+                catch (Exception exception)
+                {
+                    Trace.WriteLine(exception);
+                }
+
+                return false;
+            }
+            set
+            {
+                AssemblyInformations assemblyInformation = new AssemblyInformations(Assembly.GetExecutingAssembly().GetName().Name);
+
+                RegistryKey registryKey = Registry.CurrentUser.CreateSubKey("Software\\" + assemblyInformation.Company + "\\" + assemblyInformation.Product+"\\Account");
+
+                registryKey.SetValue("IsLogged", isLogged);
+
+                IsLogged = value;
+            }
+        }
 
         public MainWindow()
         {
+            File.Create(Path.Combine(Path.GetTempPath() + "sdlp.sdlp"));
+
             InitializeComponent();
 
-            NewCommandBinding_Executed(null, null);
+            DataContext = this;
 
             AssemblyInformations assemblyInformation = new AssemblyInformations(Assembly.GetExecutingAssembly().GetName().Name);
 
-            if (assemblyInformation.InformationalVersion.Contains("alpha") || assemblyInformation.InformationalVersion.Contains("beta") || assemblyInformation.InformationalVersion.Contains("preview") || assemblyInformation.InformationalVersion.Contains("rc"))
-                Title = Title + " | Build " + assemblyInformation.InformationalVersion;
+            DocumentTextRange = new TextRange(DocumentRichTextBox.Document.ContentStart, DocumentRichTextBox.Document.ContentEnd);
 
-            teacher = new Teacher();
+            WordsNumberTextBlock.Text = (DocumentTextRange.Text.Count() <= 1) ? DocumentTextRange.Text.Count() + " mot" : DocumentTextRange.Text.Count() + " mots";
+            #region Bouton Click
+            #region Blanck Activity
+            BackstageNewActivityUserControl.BlanckActivityButton.Click += BlanckActivityButton_Click;
+            StartScreenNewActivityUserControl.BlanckActivityButton.Click += BlanckActivityButton_Click;
+            #endregion Blanck Activity
+
+            #region Word Document
+            BackstageNewActivityUserControl.WordDocumentButton.Click += WordDocumentButton_Click;
+            StartScreenNewActivityUserControl.WordDocumentButton.Click += WordDocumentButton_Click;
+            #endregion Word Document
+
+            #region PDF Document
+            BackstageNewActivityUserControl.PdfDocumentButton.Click += PdfDocumentButton_Click;
+            StartScreenNewActivityUserControl.PdfDocumentButton.Click += PdfDocumentButton_Click;
+            #endregion PDF Document
+            #endregion Bouton Click
+
+            Resources.Add("Icon", System.Drawing.Icon.ExtractAssociatedIcon(Path.Combine(Path.GetTempPath() + "sdlp.sdlp")).ToImageSource());
+            
+            StartScreenRecentFilesUserControl.RecentFilesMenuListView.PreviewMouseLeftButtonDown += RecentFilesMenuListView_MouseLeftButtonUp;
         }
 
-        public MainWindow(ref Teacher teacher) : this()
+        private void RecentFilesMenuListView_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            this.teacher = teacher;
-        }
-
-        public MainWindow(string activityInformations):this()
-        {
-            activity = ActivityPathParser.Parser(activityInformations);
-
-            activity.ProvidedWords = activity.ProvidedWords.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
-
-            TexteTextBox.DataContext = activity;
-
-            ProvidedWordsListBox.ItemsSource = activity.ProvidedWords;
-        }
-
-        public MainWindow(string activityInformations, ref Teacher teacher) : this()
-        {
-            activity = ActivityPathParser.Parser(activityInformations);
-
-            this.teacher = teacher;
-
-            if (activity.IDActivity != -2)
+            if (StartScreenRecentFilesUserControl.RecentFilesMenuListView.SelectedItem != null)
             {
-                BDDAccess bddAccess = new BDDAccess();
+                FluentBackastage.IsOpen = false;
+                FluentStartScreen.IsOpen = false;
+
+                var selectedProperty = (KeyValuePair<string, IMRUEntryViewModel>)((ListView)sender).SelectedItem;
+
+                filePath = selectedProperty.Key;
+
+                activity = Activity.Open(filePath);
+
+                ActivityLayoutDocument.Title = activity.ActivityName;
+
+                Title = activity.ActivityName + " - Le Studio des Langues";
+
+                DocumentTextRange.Text = activity.Text;
                 
-                if(bddAccess.Connect())
-                {
-                    activity = bddAccess.GetActivity(activity.IDActivity);
+                ProvidedWordsListBox.ItemsSource = activity.ProvidedWords;
 
-                    activity.ProvidedWords = activity.ProvidedWords.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
-
-                    TexteTextBox.DataContext = activity;
-
-                    ProvidedWordsListBox.ItemsSource = activity.ProvidedWords;
-
-                    if (!string.IsNullOrEmpty(bddAccess.Information))
-                        MessageBox.Show(bddAccess.Information, new AssemblyInformations(Assembly.GetExecutingAssembly().GetName().Name).Product, MessageBoxButton.OK, bddAccess.MessageBoxImage, MessageBoxResult.OK);
-                }
+                RecentFiles.UpdateEntry(filePath);
             }
         }
 
-        public void ShowDialog(Window owner)
+        private void BlanckActivityButton_Click(object sender, RoutedEventArgs e)
         {
-            Owner = owner;
-            ShowDialog();
-        }
+            FluentBackastage.IsOpen = false;
+            FluentStartScreen.IsOpen = false;
 
-        private void NewCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            activity = new Activity() { Text = "" };
-            TexteTextBox.DataContext = activity;
+            activity = new Activity();
+
+            ActivityLayoutDocument.Title = activity.ActivityName = "Activité 1";
+
+            Title = activity.ActivityName + " - Le Studio des Langues";
+
+            filePath = "";
 
             ProvidedWordsListBox.ItemsSource = activity.ProvidedWords;
         }
 
-        private void OpenCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
+        private void WordDocumentButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!Ldap.IsAuthificated)
-                new AuthentificationWindow(ref teacher).ShowDialog(this);
-
-            if (Ldap.IsAuthificated)
-            {
-                OpenBDDWindow openBDD = new OpenBDDWindow(teacher);
-                openBDD.ShowDialog(this);
-
-                if (openBDD.ActivityInformations != "" && openBDD.ActivityInformations != null)
-                {
-                    activity = ActivityPathParser.Parser(openBDD.ActivityInformations);
-
-                    if (activity.IDActivity != -2)
-                    {
-                        BDDAccess bddAccess = new BDDAccess();
-
-                        if (bddAccess.Connect())
-                        {
-                            activity = bddAccess.GetActivity(activity.IDActivity);
-
-                            activity.ProvidedWords = activity.ProvidedWords.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
-
-                            TexteTextBox.DataContext = activity;
-
-                            ProvidedWordsListBox.ItemsSource = activity.ProvidedWords;
-
-                            if (!string.IsNullOrEmpty(bddAccess.Information))
-                                MessageBox.Show(bddAccess.Information, new AssemblyInformations(Assembly.GetExecutingAssembly().GetName().Name).Product, MessageBoxButton.OK, bddAccess.MessageBoxImage, MessageBoxResult.OK);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void SaveCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            if (!string.IsNullOrEmpty(activity.Text))
-            {
-                if (!Ldap.IsAuthificated)
-                    new AuthentificationWindow(ref teacher).ShowDialog(this);
-
-                if (Ldap.IsAuthificated)
-                {
-                    SaveBDDWindow saveBDDWindow = new SaveBDDWindow(activity, teacher);
-                    saveBDDWindow.ShowDialog(this);
-                }
-            }
-            else
-                MessageBox.Show("Veuillez saisir du texte avant d'enregistrer l'activité.", new AssemblyInformations(Assembly.GetExecutingAssembly().GetName().Name).Product, MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK);
-        }
-
-        private void ImportActivityCommandBingind_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog() { Filter = "Fichier Studio des Langues Professeur|*.sdlp" };
+            OpenFileDialog openFileDialog = new OpenFileDialog() { Filter = "Document Word|*.docx|Document Word 93-2003|*.doc" };
 
             if ((bool)openFileDialog.ShowDialog())
             {
-                if (Path.GetExtension(openFileDialog.FileName) == ".sdlp")
+                OpenDocumentWindow = new OpenDocumentWindow(Path.GetFileName(openFileDialog.FileName)) { Owner = this };
+
+                Cursor = Cursors.Wait;
+
+                Thread thread = new Thread(() =>
                 {
-                    activity = Activity.Open(openFileDialog.FileName);
+                    MemoryStream memoryStream = OpenDocuments.GetTextFromWord(openFileDialog.FileName);
 
-                    TexteTextBox.DataContext = activity;
+                    if (memoryStream != default(MemoryStream) && memoryStream != null)
+                    {
+                        Dispatcher.Invoke(() => DocumentTextRange.Load(memoryStream, DataFormats.Rtf));
 
-                    activity.ProvidedWords = activity.ProvidedWords.Where(s => !string.IsNullOrWhiteSpace(s)).Distinct().ToList();
+                        Dispatcher.Invoke(() => FluentBackastage.IsOpen = false);
+                        Dispatcher.Invoke(() => FluentStartScreen.IsOpen = false);
 
-                    ProvidedWordsListBox.ItemsSource = activity.ProvidedWords;
-                }                
+                        Dispatcher.Invoke(() => activity = new Activity() { Text = DocumentTextRange.Text, ActivityName = Path.GetFileNameWithoutExtension(openFileDialog.FileName) });
+
+                        Dispatcher.Invoke(() => ActivityLayoutDocument.Title = activity.ActivityName);
+
+                        Dispatcher.Invoke(() => Title = activity.ActivityName + " - Le Studio des Langues");
+
+                        filePath = "";
+
+                        Dispatcher.Invoke(() => ProvidedWordsListBox.ItemsSource = activity.ProvidedWords);
+                    }
+
+                    Dispatcher.Invoke(() => OpenDocumentWindow.Close());
+                    Dispatcher.Invoke(() => Cursor = Cursors.Arrow);
+                });
+
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start();
+
+                OpenDocumentWindow.ShowDialog();
+
+                RecentFiles.UpdateEntry(openFileDialog.FileName);
             }
         }
 
-        private void ExportActivityCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
+        private void PdfDocumentButton_Click(object sender, RoutedEventArgs e)
         {
-            SaveFileDialog saveFileDialog = new SaveFileDialog() { Filter = "Fichier Studio des Langues Professeur|*.sdlp" };
+            OpenFileDialog openFileDialog = new OpenFileDialog() { Filter = "Fichiers PDF|*.pdf" };
+
+            if ((bool)openFileDialog.ShowDialog())
+            {
+                OpenDocumentWindow = new OpenDocumentWindow(Path.GetFileName(openFileDialog.FileName)) { Owner = this };
+
+                Cursor = Cursors.Wait;
+
+                Thread thread = new Thread(() =>
+                {
+                        Dispatcher.Invoke(() => DocumentTextRange.Text = OpenDocuments.GetTextFromPdf(openFileDialog.FileName));
+
+                        Dispatcher.Invoke(() => FluentBackastage.IsOpen = false);
+                        Dispatcher.Invoke(() => FluentStartScreen.IsOpen = false);
+
+                        activity = new Activity() { Text = DocumentTextRange.Text, ActivityName = Path.GetFileNameWithoutExtension(openFileDialog.FileName) };
+
+                        Dispatcher.Invoke(() => ActivityLayoutDocument.Title = activity.ActivityName);
+
+                        Dispatcher.Invoke(() => Title = activity.ActivityName + " - Le Studio des Langues");
+
+                        filePath = "";
+
+                        Dispatcher.Invoke(() => ProvidedWordsListBox.ItemsSource = activity.ProvidedWords);
+
+                    Dispatcher.Invoke(() => OpenDocumentWindow.Close());
+                    Dispatcher.Invoke(() => Cursor = Cursors.Arrow);
+                });
+
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start();
+
+                OpenDocumentWindow.ShowDialog();
+
+                RecentFiles.UpdateEntry(openFileDialog.FileName);
+            }
+        }
+
+        private void BrowseButton_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog() { DefaultExt = ".sdlp", Filter = "Fichier Studio des Langues - Professeur|*.sdlp" };
 
             if ((bool)saveFileDialog.ShowDialog())
+            {
+                filePath = saveFileDialog.FileName;
+
                 activity.Save(saveFileDialog.FileName);
-        }
-
-        private void CloseCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) => Close();
-
-        private void ExitCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e) => System.Windows.Application.Current.Shutdown(0);
-
-        private void DeleteCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            if (TexteTextBox.SelectedText != "")
-                TexteTextBox.SelectedText = TexteTextBox.SelectedText.Remove(0);
-        }
-
-        private void ToUpperCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            if (TexteTextBox.SelectedText != "")
-                TexteTextBox.SelectedText = TexteTextBox.SelectedText.ToUpper();
-        }
-
-        private void ToLowerCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            if (TexteTextBox.SelectedText != "")
-                TexteTextBox.SelectedText = TexteTextBox.SelectedText.ToLower();
-        }
-
-        private void WordWrapCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            // TODO ==> Gérer état checkbox lors de l'utilisation du raccourci.
-
-            if(WordWrapMenuItem.IsChecked)
-            {
-                TexteTextBox.TextWrapping = TextWrapping.Wrap;
-            }
-            else
-            {
-                TexteTextBox.TextWrapping = TextWrapping.NoWrap;
             }
         }
 
-        private void ActivitiesMenuItem_Click(object sender, RoutedEventArgs e)
+        private void ConnectionButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!Ldap.IsAuthificated)
-                new AuthentificationWindow(ref teacher).ShowDialog(this);
-
-            if (Ldap.IsAuthificated)
-                new ActivitiesWindow(teacher).Show(this);
+            new AuthentificationWindow().ShowDialog(this);
         }
 
-        private void BDDConfigurationMenuItem_Click(object sender, RoutedEventArgs e) => new OptionsWindow("Base de données").ShowDialog(this);
-
-        private void LDAPConfigurationMenuItem_Click(object sender, RoutedEventArgs e) => new OptionsWindow("Serveur de domaine").ShowDialog(this);
-
-        private void HelpCommandBinding_Executed(object sender, ExecutedRoutedEventArgs e)
+        private void FluentBackstageTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Process process = null;
+            if (ExitBackstageTabItem.IsSelected)
+                Close();
+        }
 
-            try
-            {
-                process = new Process();
-                process.StartInfo.FileName = "Aide [SDLP].pdf";
-                process.StartInfo.WorkingDirectory = Path.Combine(Directory.GetCurrentDirectory(), "fr-FR");
-                process.Start();
-            }
-            catch (Exception) { }
-            finally
-            {
-                if (process != null)
-                    process.Close();
-            }
+        #region Application closing
+        private void RibbonWindow_Closing(object sender, CancelEventArgs e) => System.Windows.Application.Current.Shutdown(0);
+
+        private void RibbonWindow_Closed(object sender, EventArgs e) => RecentFiles.SaveMRU();
+        #endregion Application closing
+
+        private void ManageProvidedWordsButton_Click(object sender, RoutedEventArgs e)
+        {
+            ProvidedWordsLayoutAnchorable.IsVisible = true;
+        }
+
+        private void DocumentRichTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            WordsNumberTextBlock.Text = (DocumentTextRange.Text.Count() <= 1) ? DocumentTextRange.Text.Count() + " mot" : DocumentTextRange.Text.Count() + " mots";
+        }
+
+        #region Ajout des mots fournis
+        private void AddProvidedWordsMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (DocumentRichTextBox.Selection.Text != "")
+                AddProvidedWords(DocumentRichTextBox.Selection.Text);
+
+            ProvidedWordsListBox.Items.Refresh();
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)
@@ -249,33 +287,17 @@ namespace SDLP
             ProvidedWordsListBox.Items.Refresh();
         }
 
-        private void DeleteButton_Click(object sender, RoutedEventArgs e)
-        {
-            foreach (var item in ProvidedWordsListBox.SelectedItems)
-                activity.ProvidedWords.Remove(item.ToString());
-
-            ProvidedWordsListBox.Items.Refresh();
-        }
-
-        private void AddProvidedWordsMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (TexteTextBox.SelectedText != "")
-                AddProvidedWords(TexteTextBox.SelectedText);
-
-            ProvidedWordsListBox.Items.Refresh();
-        }
-
         public void AddProvidedWords(string word)
         {
             CultureInfo cultureInfo = new CultureInfo("fr-Fr");
 
-            if (cultureInfo.CompareInfo.IndexOf(TexteTextBox.Text, word, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0)
+            if (cultureInfo.CompareInfo.IndexOf(DocumentTextRange.Text, word, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0)
             {
                 string[] words = word.Split(Activity.SpecialCharacters, StringSplitOptions.RemoveEmptyEntries);
 
                 foreach (string item in words)
                 {
-                    if (item.IsFullWord(TexteTextBox.Text, Dev2Be.Toolkit.Enumerations.StringComparison.IgnoreCaseAndDiacritics))
+                    if (item.IsFullWord(DocumentTextRange.Text, Dev2Be.Toolkit.Enumerations.StringComparison.IgnoreCaseAndDiacritics))
                     {
                         if (!activity.ProvidedWords.Contains(word, StringComparer.OrdinalIgnoreCase))
                             activity.ProvidedWords.Add(item);
@@ -283,5 +305,6 @@ namespace SDLP
                 }
             }
         }
+        #endregion Ajout des mots fournis
     }
 }

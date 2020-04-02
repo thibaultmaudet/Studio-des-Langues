@@ -1,24 +1,9 @@
-﻿Version 1.0.0-rc-02 (xx Juin 2018)
+﻿Version 1.0.0-pre1.build.305 (Publiée le XX XX 201X) :
 
 • Ajout :
-	- Recherche d'activités sur la fenêtre d'ouverture d'activité.
+	- Possibilité de gérer le zoom du texte.
 
-• Amélioration :
-	- Optimisation lors de la recherche sur la fenêtre de gestion des activités.
-
-• Correction :
-	- SDLP01 : Dans certains cas, l'authentification ne fonctionnait pas correctement.
+• Problème connu :
+	- Lors de la sélection de certaines valeurs de zoom, il est necessaire de recliquez dessus pour que cette dernière s'affiche.
 
 -----------------------------------------------------------
-
-Version 1.0.0-rc-01 (17 Juin 2018)
-
-Première version publique.
-
-• Ajout :
-	- Création d'une activité.
-	- Sauvegarde des activités dans la base de données.
-	- Modification des activités.
-	- Exportation/Importation de l'activité.
-	- Gestion des activités et des résultats.
-	- Consultation des résultats.
